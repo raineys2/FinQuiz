@@ -904,7 +904,16 @@
     // 3. INICIALIZAÇÃO DO FIREBASE E ESTADO GLOBAL
     // =========================================================
     const appId = typeof __app_id !== "undefined" ? __app_id : "finquiz-app-default";
-    const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : null;
+   const firebaseConfig = {
+  apiKey: "AIzaSyB6_sODFZfuKWA4M5yuV0TmQUc2csarZZs",
+  authDomain: "finquiz-jogo.firebaseapp.com",
+  databaseURL: "https://finquiz-jogo-default-rtdb.firebaseio.com",
+  projectId: "finquiz-jogo",
+  storageBucket: "finquiz-jogo.firebasestorage.app",
+  messagingSenderId: "1086329467235",
+  appId: "1:1086329467235:web:3136093b4c533cd80c2356",
+  measurementId: "G-NVLNC5C6R8"
+};
 
     let db = null;
     let auth = null;
