@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinQuiz - Desafio de Educação Financeira</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Tone.js para efeitos sonoros sintetizados sem URLs externas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, #064e3b, #0f172a 60%, #020617);
+      min-height: 100vh;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Animações suaves */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: float 3.5s ease-in-out infinite;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-pop {
+      animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+    .animate-pulse-ring {
+      animation: pulseRing 1.5s infinite;
+    }
+
+    /* Botões estilo Kahoot aprimorados */
+    .option-btn {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.28);
+    }
+    .option-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+    }
+    .option-btn:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.28);
+    }
+    .option-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    /* Barra de rolagem estilizada */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(16, 185, 129, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(16, 185, 129, 0.7);
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+
+  <!-- Cabeçalho Superior -->
+  <header class="w-full border-b border-white/10 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <button id="btnLogoHome" class="flex items-center gap-3 text-left group focus:outline-none">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+          <i class="fa-solid fa-coins text-slate-950 text-lg"></i>
+        </div>
+        <div>
+          <span class="font-display font-extrabold text-xl tracking-tight bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300 bg-clip-text text-transparent">
+            FinQuiz
+          </span>
+          <span class="hidden sm:inline-block text-xs text-slate-400 ml-2 font-medium bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+            Educação Financeira
+          </span>
+        </div>
+      </button>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Botão de Som -->
+        <button id="btnToggleSound" title="Ativar/Desativar Som" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <!-- Indicador de Status Online -->
+        <div id="connectionBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-white/10 text-xs font-medium text-slate-300">
+          <span id="connectionDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="connectionText">Conectando...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast / Notificação Flutuante (Substitui alert/confirm) -->
+  <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Modal de Confirmação Customizado -->
+  <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-white/15 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-pop">
+      <div class="flex items-center gap-3 text-amber-400 mb-3">
+        <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+        <h3 id="confirmTitle" class="text-lg font-bold text-white">Confirmar ação</h3>
+      </div>
+      <p id="confirmMessage" class="text-slate-300 text-sm mb-6 leading-relaxed">Tem certeza que deseja continuar?</p>
+      <div class="flex justify-end gap-3">
+        <button id="confirmCancelBtn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition">
+          Cancelar
+        </button>
+        <button id="confirmOkBtn" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="flex-grow flex items-center justify-center px-4 py-6 sm:py-10">
+    <div class="w-full max-w-5xl">
+
+      <!-- ========================================================= -->
+      <!-- TELA 1: INÍCIO (ENTRAR / CRIAR SALA / GERENCIAR PERGUNTAS) -->
+      <!-- ========================================================= -->
+      <section id="viewHome" class="animate-pop">
+        <div class="text-center max-w-2xl mx-auto mb-8">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-4 animate-float">
+            <i class="fa-solid fa-bolt text-amber-400"></i>
+            <span>Multiplayer em Tempo Real • Pontuação por Velocidade</span>
+          </div>
+          <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight">
+            Domine suas finanças e <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-amber-300">vença o ranking!</span>
+          </h1>
+          <p class="text-slate-300 text-sm sm:text-base">
+            Entre em uma sala com seus amigos ou crie sua própria arena de perguntas sobre investimentos, juros compostos, orçamento e economia.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <!-- Cartão Principal de Identificação e Acesso -->
+          <div class="lg:col-span-7 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between">
+            <div>
+              <label for="inputNickname" class="block text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+                1. Seu Apelido (Nickname)
+              </label>
+              <div class="relative mb-6">
+                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                  <i class="fa-solid fa-user-astronaut"></i>
+                </span>
+                <input
+                  type="text"
+                  id="inputNickname"
+                  maxlength="18"
+                  placeholder="Ex: InvestidorMestre"
+                  class="w-full pl-11 pr-4 py-3.5 bg-slate-950/80 border border-white/15 rounded-2xl text-white placeholder-slate-500 font-semibold focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition"
+                />
+              </div>
+
+              <!-- Opção A: Entrar em sala -->
+              <div class="bg-slate-950/50 border border-white/10 rounded-2xl p-4 sm:p-5 mb-4">
+                <label for="inputRoomCode" class="block text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">
+                  2A. Entrar em uma Sala Existente
+                </label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    id="inputRoomCode"
+                    maxlength="6"
+                    placeholder="CÓDIGO (EX: FIN829)"
+                    class="flex-1 px-4 py-3 bg-slate-900 border border-white/15 rounded-xl text-white placeholder-slate-500 font-mono font-bold uppercase tracking-widest text-center sm:text-left focus:outline-none focus:border-sky-400 transition"
+                  />
+                  <button
+                    id="btnJoinRoom"
+                    class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold shadow-lg shadow-sky-500/25 transition flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Entrar na Sala</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Divisor -->
+            <div class="relative my-3 flex items-center justify-center">
+              <div class="border-t border-white/10 w-full"></div>
+              <span class="bg-slate-900 px-3 text-xs font-semibold text-slate-400 uppercase">ou</span>
+              <div class="border-t border-white/10 w-full"></div>
+            </div>
+
+            <!-- Opção B: Criar Sala (Host) -->
+            <button
+              id="btnCreateRoom"
+              class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-base sm:text-lg shadow-xl shadow-emerald-500/25 transition flex items-center justify-center gap-3"
+            >
+              <i class="fa-solid fa-crown text-xl"></i>
+              <span>Criar e Administrar Nova Sala</span>
+            </button>
+          </div>
+
+          <!-- Cartão Lateral: Banco de Questões & Regras -->
+          <div class="lg:col-span-5 flex flex-col gap-6">
+            <!-- Gerenciador de Perguntas -->
+            <div class="bg-slate-900/80 backdrop-blur-xl border border-amber-400/25 rounded-3xl p-6 shadow-xl flex flex-col justify-between flex-grow">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center gap-2 text-amber-300 font-bold text-sm">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    Personalize o Desafio
+                  </span>
+                  <span id="questionCountBadge" class="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-bold border border-amber-400/20">
+                    11 questões ativas
+                  </span>
+                </div>
+                <h2 class="text-xl font-bold text-white mb-2">Editor de Perguntas</h2>
+                <p class="text-slate-300 text-sm leading-relaxed mb-5">
+                  Como administrador, você pode adicionar novas questões, editar alternativas, ajustar o tempo ou restaurar o pacote padrão de Educação Financeira a qualquer momento.
+                </p>
+              </div>
+              <button
+                id="btnOpenEditor"
+                class="w-full py-3.5 px-5 rounded-2xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/40 text-amber-300 font-bold transition flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-sliders"></i>
+                <span>Gerenciar Perguntas</span>
+              </button>
+            </div>
+
+            <!-- Como funciona a pontuação -->
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl p-5">
+              <h3 class="text-sm font-bold text-emerald-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-gauge-high"></i> Sistema de Pontuação
+              </h3>
+              <ul class="space-y-2 text-xs sm:text-sm text-slate-300">
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-check-circle text-emerald-400 mt-0.5"></i>
+                  <span><strong>500 pts base</strong> por resposta correta.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-stopwatch text-amber-400 mt-0.5"></i>
+                  <span><strong>Até +500 pts bônus</strong> pela rapidez na resposta (máx. 1.000 pts/questão).</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-layer-group text-sky-400 mt-0.5"></i>
+                  <span><strong>Acumulativo:</strong> soma total ao longo de todas as rodadas.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TELA 2: GERENCIADOR / EDITOR DE PERGUNTAS                 -->
+      <!-- ========================================================= -->
+      <section id="viewEditor" class="hidden animate-pop">
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+            <div>
+              <div class="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
+                <i class="fa-solid fa-book-open"></i> Banco de Questões do Administrador
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Gerenciar Perguntas</h2>
+              <p class="text-slate-400 text-sm mt-1">
+                As alterações são salvas e aplicadas automaticamente nas salas que você administrar.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button id="btnResetQuestions" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-semibold border border-white/10 transition flex items-center gap-2">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Restaurar Padrão</span>
+              </button>
+              <button id="btnNewQuestion" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold transition flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nova Pergunta</span>
+              </button>
+              <button id="btnBackFromEditor" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-bold transition">
+                Concluir
+              </button>
+            </div>
+          </div>
+
+          <!-- Formulário de Adição / Edição (Oculto por padrão até clicar em Nova/Editar) -->
+          <div id="questionFormCard" class="hidden my-6 bg-slate-950/90 border border-emerald-500/40 rounded-2xl p-5 sm:p-6 animate-pop">
+            <div class="flex items-center justify-between mb-4">
+              <h3 id="formCardTitle" class="text-lg font-bold text-emerald-300">Adicionar Nova Questão</h3>
+              <button id="btnCloseForm" class="text-slate-400 hover:text-white p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+              </button>
+            </div>
+
+            <input type="hidden" id="editQuestionId" value="" />
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div class="md:col-span-3">
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Enunciado da Pergunta</label>
+                <input
+                  type="text"
+                  id="qPromptInput"
+                  placeholder="Ex: Qual investimento brasileiro conta com proteção do FGC até R$ 250 mil?"
+                  class="w-full px-4 py-3 bg-slate-900 border border-white/15 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Tempo (segundos)</label>
+                <select id="qTimeInput" class="w-full px-4 py-3 bg-slate-900 border border-white/15 rounded-xl text-white font-semibold focus:outline-none focus:border-emerald-400">
+                  <option value="15">15 segundos</option>
+                  <option value="20">20 segundos</option>
+                  <option value="25" selected>25 segundos</option>
+                  <option value="30">30 segundos</option>
+                  <option value="40">40 segundos</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">
+                Alternativas (Marque o botão circular ao lado da resposta correta)
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Opção 0 -->
+                <div class="flex items-center gap-2.5 bg-slate-900/90 p-2.5 rounded-xl border border-rose-500/30">
+                  <input type="radio" name="correctOption" value="0" checked class="w-5 h-5 accent-emerald-500 cursor-pointer" />
+                  <span class="w-7 h-7 rounded-lg bg-rose-500 flex items-center justify-center text-white text-xs font-bold shrink-0">▲</span>
+                  <input type="text" id="qOpt0" placeholder="Alternativa A" class="w-full bg-transparent text-white text-sm focus:outline-none" />
+                </div>
+                <!-- Opção 1 -->
+                <div class="flex items-center gap-2.5 bg-slate-900/90 p-2.5 rounded-xl border border-sky-500/30">
+                  <input type="radio" name="correctOption" value="1" class="w-5 h-5 accent-emerald-500 cursor-pointer" />
+                  <span class="w-7 h-7 rounded-lg bg-sky-500 flex items-center justify-center text-white text-xs font-bold shrink-0">◆</span>
+                  <input type="text" id="qOpt1" placeholder="Alternativa B" class="w-full bg-transparent text-white text-sm focus:outline-none" />
+                </div>
+                <!-- Opção 2 -->
+                <div class="flex items-center gap-2.5 bg-slate-900/90 p-2.5 rounded-xl border border-amber-500/30">
+                  <input type="radio" name="correctOption" value="2" class="w-5 h-5 accent-emerald-500 cursor-pointer" />
+                  <span class="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center text-slate-950 text-xs font-bold shrink-0">●</span>
+                  <input type="text" id="qOpt2" placeholder="Alternativa C" class="w-full bg-transparent text-white text-sm focus:outline-none" />
+                </div>
+                <!-- Opção 3 -->
+                <div class="flex items-center gap-2.5 bg-slate-900/90 p-2.5 rounded-xl border border-emerald-500/30">
+                  <input type="radio" name="correctOption" value="3" class="w-5 h-5 accent-emerald-500 cursor-pointer" />
+                  <span class="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950 text-xs font-bold shrink-0">■</span>
+                  <input type="text" id="qOpt3" placeholder="Alternativa D" class="w-full bg-transparent text-white text-sm focus:outline-none" />
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-5">
+              <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5">Explicação Educativa (Opcional - aparece no resultado)</label>
+              <input
+                type="text"
+                id="qExplanationInput"
+                placeholder="Ex: O CDB possui garantia do Fundo Garantidor de Créditos (FGC)."
+                class="w-full px-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            <div class="flex justify-end gap-3">
+              <button id="btnCancelQuestionForm" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition">
+                Cancelar
+              </button>
+              <button id="btnSaveQuestion" class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Salvar Pergunta</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de Perguntas -->
+          <div id="questionsListContainer" class="mt-6 space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TELA 3: LOBBY DA SALA (SALA DE ESPERA MULTIPLAYER)        -->
+      <!-- ========================================================= -->
+      <section id="viewLobby" class="hidden animate-pop">
+        <div class="bg-slate-900/85 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl">
+          <!-- Cabeçalho da Sala -->
+          <div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10">
+            <div class="text-center md:text-left">
+              <span id="lobbyRoleBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 mb-2">
+                <i class="fa-solid fa-crown"></i> Você é o Administrador da Sala
+              </span>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Sala de Espera</h2>
+              <p class="text-slate-400 text-sm mt-1">Compartilhe o código ao lado para os jogadores entrarem.</p>
+            </div>
+
+            <!-- Cartão do Código da Sala -->
+            <div class="flex items-center gap-3 bg-slate-950 border-2 border-emerald-400/50 rounded-2xl px-5 py-3.5 shadow-lg shadow-emerald-500/10">
+              <div>
+                <span class="block text-[10px] font-bold uppercase tracking-widest text-slate-400">Código da Sala</span>
+                <span id="lobbyRoomCodeDisplay" class="font-mono text-3xl sm:text-4xl font-extrabold tracking-widest text-emerald-300">
+                  ------
+                </span>
+              </div>
+              <button
+                id="btnCopyRoomCode"
+                title="Copiar Código"
+                class="p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 transition"
+              >
+                <i class="fa-regular fa-copy text-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Controles Exclusivos do Host -->
+          <div id="hostLobbyControls" class="hidden mt-6 bg-slate-950/60 border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3 justify-center lg:justify-start">
+              <button
+                id="btnLobbyEditQuestions"
+                class="px-4 py-2.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-amber-300 text-xs sm:text-sm font-bold transition flex items-center gap-2"
+              >
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Alterar Perguntas (<span id="lobbyQuestionCount">11</span>)</span>
+              </button>
+
+              <button
+                id="btnAddBot"
+                class="px-4 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-300 text-xs sm:text-sm font-bold transition flex items-center gap-2"
+              >
+                <i class="fa-solid fa-robot"></i>
+                <span>+ Adicionar Bot de Teste</span>
+              </button>
+            </div>
+
+            <button
+              id="btnStartGame"
+              class="w-full lg:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/25 transition flex items-center justify-center gap-2.5"
+            >
+              <i class="fa-solid fa-play"></i>
+              <span>Iniciar Partida Agora</span>
+            </button>
+          </div>
+
+          <!-- Mensagem para Jogadores Comuns -->
+          <div id="guestLobbyBanner" class="hidden mt-6 bg-sky-500/10 border border-sky-400/25 rounded-2xl p-4 text-center">
+            <p class="text-sky-200 text-sm font-medium flex items-center justify-center gap-2">
+              <i class="fa-solid fa-spinner fa-spin text-sky-400"></i>
+              <span>Aguardando o administrador iniciar o quiz... Prepare-se para responder rápido!</span>
+            </p>
+          </div>
+
+          <!-- Lista de Jogadores Conectados -->
+          <div class="mt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-users text-emerald-400"></i>
+                <span>Jogadores na Sala (<span id="lobbyPlayersCount">0</span>)</span>
+              </h3>
+              <button id="btnLeaveRoom" class="text-xs font-semibold text-rose-400 hover:text-rose-300 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-door-open"></i> Sair da Sala
+              </button>
+            </div>
+
+            <div id="lobbyPlayersGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <!-- Jogadores inseridos dinamicamente -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TELA 4: PARTIDA ATIVA (PERGUNTA E ALTERNATIVAS)           -->
+      <!-- ========================================================= -->
+      <section id="viewQuestion" class="hidden animate-pop">
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-white/15 rounded-3xl p-5 sm:p-8 shadow-2xl">
+          <!-- Barra Superior da Rodada -->
+          <div class="flex items-center justify-between gap-4 mb-5">
+            <div class="flex items-center gap-3">
+              <span id="gameQuestionProgress" class="px-3.5 py-1.5 rounded-xl bg-white/10 text-white font-bold text-xs sm:text-sm">
+                Questão 1 de 11
+              </span>
+              <span id="gameMyScoreBadge" class="px-3.5 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 font-bold text-xs sm:text-sm">
+                <i class="fa-solid fa-star mr-1"></i> 0 pts
+              </span>
+            </div>
+
+            <!-- Cronômetro Circular / Destaque -->
+            <div class="flex items-center gap-3">
+              <span class="hidden sm:inline text-xs font-semibold text-slate-400 uppercase">Tempo</span>
+              <div id="timerCircle" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center font-display font-extrabold text-xl sm:text-2xl text-emerald-300 shadow-lg">
+                25
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso do Tempo -->
+          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden mb-6">
+            <div id="timerProgressBar" class="h-full bg-gradient-to-r from-emerald-400 via-amber-300 to-rose-500 transition-all duration-200 ease-linear" style="width: 100%;"></div>
+          </div>
+
+          <!-- Enunciado da Questão -->
+          <div class="bg-slate-950/70 border border-white/10 rounded-2xl p-6 sm:p-8 mb-6 text-center shadow-inner">
+            <h2 id="questionPromptText" class="text-xl sm:text-3xl font-extrabold text-white leading-snug">
+              Carregando pergunta...
+            </h2>
+          </div>
+
+          <!-- Grade das 4 Alternativas -->
+          <div id="optionsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Opção 0 -->
+            <button data-index="0" class="option-btn group w-full text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-700 border border-rose-400/40 text-white flex items-center gap-4">
+              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black/25 flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">▲</span>
+              <span class="option-text font-bold text-base sm:text-lg leading-snug">Alternativa A</span>
+            </button>
+
+            <!-- Opção 1 -->
+            <button data-index="1" class="option-btn group w-full text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 border border-sky-400/40 text-white flex items-center gap-4">
+              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black/25 flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">◆</span>
+              <span class="option-text font-bold text-base sm:text-lg leading-snug">Alternativa B</span>
+            </button>
+
+            <!-- Opção 2 -->
+            <button data-index="2" class="option-btn group w-full text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 border border-amber-300/50 text-slate-950 flex items-center gap-4">
+              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black/15 flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">●</span>
+              <span class="option-text font-extrabold text-base sm:text-lg leading-snug">Alternativa C</span>
+            </button>
+
+            <!-- Opção 3 -->
+            <button data-index="3" class="option-btn group w-full text-left p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 border border-emerald-300/40 text-white flex items-center gap-4">
+              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black/25 flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">■</span>
+              <span class="option-text font-bold text-base sm:text-lg leading-snug">Alternativa D</span>
+            </button>
+          </div>
+
+          <!-- Feedback Imediato após responder -->
+          <div id="answeredWaitingBox" class="hidden mt-6 bg-slate-950/90 border border-emerald-400/30 rounded-2xl p-5 text-center animate-pop">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-300 mb-2">
+              <i class="fa-solid fa-check text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Resposta registrada!</h3>
+            <p class="text-slate-400 text-sm mt-1">
+              Aguardando os demais jogadores responderem ou o tempo encerrar...
+            </p>
+            <div class="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-xs text-slate-300">
+              <i class="fa-solid fa-users text-emerald-400"></i>
+              <span id="answeredCounterText">1 de 1 responderam</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TELA 5: RESULTADO DA RODADA E PLACAR PARCIAL              -->
+      <!-- ========================================================= -->
+      <section id="viewRoundResult" class="hidden animate-pop">
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl">
+          <!-- Banner do Resultado Individual -->
+          <div id="myRoundResultBanner" class="rounded-2xl p-5 mb-6 text-center border">
+            <div id="myRoundResultIcon" class="text-3xl mb-1">🎉</div>
+            <h2 id="myRoundResultTitle" class="text-2xl font-extrabold">Você acertou!</h2>
+            <p id="myRoundResultPoints" class="text-sm font-bold mt-1">+890 pontos (500 base + 390 velocidade)</p>
+          </div>
+
+          <!-- Resposta Correta e Explicação -->
+          <div class="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-5 mb-6">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+              Alternativa Correta
+            </span>
+            <p id="roundCorrectAnswerText" class="text-lg sm:text-xl font-extrabold text-white mb-2">
+              Texto da resposta correta
+            </p>
+            <p id="roundExplanationText" class="text-sm text-slate-300 leading-relaxed">
+              Explicação educativa sobre o conceito financeiro.
+            </p>
+          </div>
+
+          <!-- Ranking Parcial -->
+          <div class="mb-6">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-amber-300 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-ranking-star"></i> Classificação Parcial
+            </h3>
+            <div id="partialLeaderboardList" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+              <!-- Itens do ranking -->
+            </div>
+          </div>
+
+          <!-- Botão Próxima Pergunta (Host) ou Aviso (Convidado) -->
+          <div id="hostNextRoundControls" class="hidden flex justify-end">
+            <button
+              id="btnNextQuestion"
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/25 transition flex items-center justify-center gap-2"
+            >
+              <span id="btnNextQuestionLabel">Próxima Pergunta</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <div id="guestNextRoundBanner" class="hidden text-center text-sm text-slate-400 py-2">
+            <i class="fa-solid fa-hourglass-half text-amber-400 mr-1.5"></i>
+            Aguardando o administrador avançar para a próxima etapa...
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TELA 6: PÓDIO FINAL E CLASSIFICAÇÃO COMPLETA              -->
+      <!-- ========================================================= -->
+      <section id="viewPodium" class="hidden animate-pop">
+        <div class="bg-slate-900/90 backdrop-blur-xl border border-amber-400/25 rounded-3xl p-6 sm:p-10 shadow-2xl text-center">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-extrabold uppercase tracking-wider mb-3">
+            <i class="fa-solid fa-trophy"></i> Fim de Jogo • Resultado Oficial
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-extrabold text-white mb-8">Pódio dos Campeões</h2>
+
+          <!-- Pódio Visual Top 3 -->
+          <div id="podiumVisualContainer" class="flex items-end justify-center gap-3 sm:gap-6 max-w-2xl mx-auto mb-10 pt-6">
+            <!-- Renderizado dinamicamente (2º, 1º, 3º) -->
+          </div>
+
+          <!-- Tabela Completa -->
+          <div class="max-w-2xl mx-auto text-left mb-8">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Classificação Geral</h3>
+            <div id="finalLeaderboardList" class="space-y-2">
+              <!-- Todos os jogadores -->
+            </div>
+          </div>
+
+          <!-- Ações Finais -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              id="btnPlayAgainHost"
+              class="hidden w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>Jogar Novamente na Mesma Sala</span>
+            </button>
+            <button
+              id="btnBackToHomeFinal"
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold transition flex items-center justify-center gap-2"
+            >
+              <i class="fa-solid fa-house"></i>
+              <span>Voltar ao Início</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="w-full border-t border-white/10 py-4 text-center text-xs text-slate-500">
+    FinQuiz • Educação Financeira Interativa em Tempo Real
+  </footer>
+
+  <!-- ========================================================= -->
+  <!-- LÓGICA DO JOGO & FIREBASE MULTIPLAYER                     -->
+  <!-- ========================================================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      updateDoc,
+      onSnapshot,
+      collection,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // =========================================================
+    // 1. BANCO PADRÃO DE QUESTÕES DE EDUCAÇÃO FINANCEIRA (11 QUESTÕES)
+    // =========================================================
+    const DEFAULT_QUESTIONS = [
+      {
+        id: "fin-1",
+        prompt: "1. Qual das alternativas abaixo sobre compras está certa?",
+        options: [
+          "Compras Supérfluas são coisas para status ou coisas dispensáveis",
+          "Compras Supérfluas podem ser o sinônimo de compras necessárias",
+          "Compras essenciais são o mesmo que compras necessárias",
+          "Compras essenciais não são mais importantes que compras necessárias"
+        ],
+        correctIndex: 0,
+        timeLimit: 25,
+        explanation: "Compras supérfluas envolvem desejos, status ou itens dispensáveis, diferentemente das compras essenciais."
+      },
+      {
+        id: "fin-2",
+        prompt: "2. Por que comprar algo apenas porque está em promoção nem sempre é uma boa decisão?",
+        options: [
+          "Porque produtos em promoção nunca são de boa qualidade.",
+          "Porque todas as promoções possuem preços maiores que os normais.",
+          "Porque podemos comprar algo desnecessário apenas pelo desconto.",
+          "Porque comprar produtos em promoção é sempre um desperdício."
+        ],
+        correctIndex: 2,
+        timeLimit: 25,
+        explanation: "Se você não precisa do produto, gastar dinheiro nele não gera economia — gera um gasto desnecessário."
+      },
+      {
+        id: "fin-3",
+        prompt: "3. O que é um orçamento pessoal e como ele pode ajudar?",
+        options: [
+          "É um planejamento dos ganhos e gastos que ajuda a controlar o dinheiro.",
+          "É uma lista de produtos que queremos comprar, independentemente do preço.",
+          "É uma forma de conseguir dinheiro emprestado sem pagar juros.",
+          "É um documento utilizado apenas por grandes empresas."
+        ],
+        correctIndex: 0,
+        timeLimit: 25,
+        explanation: "O orçamento pessoal organiza todas as receitas e despesas, permitindo tomar decisões conscientes e evitar dívidas."
+      },
+      {
+        id: "fin-4",
+        prompt: "4. Por que é importante reservar parte do dinheiro para imprevistos?",
+        options: [
+          "Para gastar o dinheiro em produtos mais caros.",
+          "Para evitar qualquer tipo de planejamento financeiro.",
+          "Para ter recursos disponíveis diante de situações inesperadas.",
+          "Para garantir que nunca precisaremos trabalhar."
+        ],
+        correctIndex: 2,
+        timeLimit: 25,
+        explanation: "A reserva para imprevistos traz segurança financeira para lidar com emergências sem precisar recorrer a empréstimos caros."
+      },
+      {
+        id: "fin-5",
+        prompt: "5. Qual é a diferença entre poupar dinheiro e investir dinheiro?",
+        options: [
+          "Poupar significa investir dinheiro aos poucos, enquanto investir significa guardar dinheiro sem esperar retorno",
+          "Poupar é guardar dinheiro, enquanto investir é aplicar dinheiro buscando algum retorno.",
+          "Poupar e investir são exatamente a mesma coisa.",
+          "Investir significa guardar dinheiro sem nenhuma possibilidade de retorno"
+        ],
+        correctIndex: 1,
+        timeLimit: 25,
+        explanation: "Poupar é o ato de gastar menos do que ganha e acumular recursos; investir é colocar esse dinheiro para trabalhar e render."
+      },
+      {
+        id: "fin-6",
+        prompt: "6. Por que comprar algo parcelado pode fazer com que gastemos mais do que imaginávamos?",
+        options: [
+          "Porque dividir o preço em parcelas faz com que o produto custe mais em todos os casos, mesmo quando não existem juros ou cobranças adicionais.",
+          "Porque o pagamento parcelado pode facilitar a compra, mas também dificultar o controle dos gastos e, quando há juros ou cobranças adicionais, aumentar o valor final.",
+          "Porque as parcelas são contabilizadas como dinheiro recebido, fazendo com que o consumidor tenha mais recursos disponíveis.",
+          "Porque o parcelamento impede que o consumidor compare preços e avalie outras opções antes de comprar."
+        ],
+        correctIndex: 1,
+        timeLimit: 30,
+        explanation: "O acúmulo de várias parcelas compromete o orçamento dos meses seguintes e, quando há juros, encarece o valor final."
+      },
+      {
+        id: "fin-7",
+        prompt: "7. O que pode acontecer quando uma pessoa gasta mais dinheiro do que recebe?",
+        options: [
+          "Ela pode continuar gastando normalmente, pois o dinheiro que falta será compensado automaticamente no mês seguinte.",
+          "Ela precisará abandonar todas as suas despesas, mesmo aquelas consideradas essenciais.",
+          "Ela pode acumular dívidas, comprometer sua renda futura e encontrar dificuldades para pagar despesas essenciais.",
+          "Ela estará realizando um investimento, pois gastar mais do que recebe sempre gera benefícios financeiros futuros."
+        ],
+        correctIndex: 2,
+        timeLimit: 30,
+        explanation: "Gastar acima da própria renda gera desequilíbrio financeiro, acúmulo de juros e risco de inadimplência."
+      },
+      {
+        id: "fin-8",
+        prompt: "8. Maria deseja comprar um celular novo, mas o atual ainda funciona perfeitamente. O que ela deveria considerar antes de realizar essa compra?",
+        options: [
+          "Comprar o celular imediatamente, pois produtos tecnológicos costumam perder valor com o tempo, tornando qualquer compra urgente.",
+          "Avaliar se o novo aparelho realmente atende a uma necessidade, comparar os preços e verificar se a compra não comprometerá outras prioridades financeiras.",
+          "Escolher o aparelho mais caro, pois produtos de maior preço garantem maior qualidade",
+          "Comprar o aparelho parcelado, pois dividir o pagamento garante que a compra não afetará seu orçamento."
+        ],
+        correctIndex: 1,
+        timeLimit: 30,
+        explanation: "Antes de trocar um bem funcional, é fundamental avaliar necessidade real, pesquisar preços e checar o impacto no orçamento."
+      },
+      {
+        id: "fin-9",
+        prompt: "9. João viu uma propaganda dizendo que determinado produto estava com 50% de desconto. Por que ele não deveria comprar o produto imediatamente?",
+        options: [
+          "Porque produtos com descontos elevados necessariamente apresentam defeitos ou baixa qualidade.",
+          "Porque o desconto pode ser vantajoso, mas João deve verificar o preço original, comparar outras ofertas e avaliar se realmente precisa do produto.",
+          "O enunciado está errado, pois comprar produtos em promoção é uma prática financeiramente correta, mesmo quando a compra é Supérflua.",
+          "Porque um desconto de 30% significa que Lucas economizará 1/4 do produto."
+        ],
+        correctIndex: 1,
+        timeLimit: 30,
+        explanation: "Verificar o histórico de preços, comparar lojas e confirmar a real necessidade evita cair em falsas promoções ou compras por impulso."
+      },
+      {
+        id: "fin-10",
+        prompt: "10. João recebeu R$ 100 de mesada e decidiu guardar todo o dinheiro. Podemos afirmar que João tomou a melhor decisão financeira possível?",
+        options: [
+          "Sim, pois guardar todo o dinheiro é sempre a melhor decisão, independentemente das necessidades de João.",
+          "Não, pois guardar dinheiro é uma prática prejudicial ao consumo e à economia.",
+          "Sim, pois guardar todo o dinheiro faz com que a inflação aumente",
+          "Não necessariamente, pois a melhor decisão depende das necessidades, prioridades e objetivos de João."
+        ],
+        correctIndex: 3,
+        timeLimit: 30,
+        explanation: "Uma boa gestão financeira equilibra poupança/objetivos futuros com o atendimento das necessidades e prioridades presentes."
+      },
+      {
+        id: "fin-11",
+        prompt: "11. Mariana encontrou uma mochila que custava R$ 120, mas estava sendo vendida por R$ 90. Considerando apenas essas informações, qual afirmação está correta?",
+        options: [
+          "Mariana economizará R$ 30 se comprar a mochila, logo é uma ótima decisão financeira",
+          "A mochila tem automaticamente uma qualidade menor pelo preço estar reduzido",
+          "A mochila está sendo oferecida por um preço R$ 30 menor, mas isso não significa que comprá-la seja automaticamente uma boa decisão financeira.",
+          "Mariana deveria comprar a mochila imediatamente, pois deixar de aproveitar um desconto sempre representa uma perda financeira."
+        ],
+        correctIndex: 2,
+        timeLimit: 30,
+        explanation: "O desconto reduz o preço do item em R$ 30, mas a compra só será vantajosa se Mariana realmente precisar da mochila e tiver orçamento para isso."
+      }
+    ];
+
+    // =========================================================
+    // 2. SISTEMA DE ÁUDIO (TONE.JS)
+    // =========================================================
+    class SoundEffects {
+      constructor() {
+        this.enabled = true;
+        this.synth = null;
+      }
+
+      async ensureReady() {
+        if (!this.enabled) return false;
+        if (typeof Tone === "undefined") return false;
+        if (Tone.context.state !== "running") {
+          await Tone.start();
+        }
+        if (!this.synth) {
+          this.synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          this.synth.volume.value = -8;
+        }
+        return true;
+      }
+
+      async playClick() {
+        if (!(await this.ensureReady())) return;
+        this.synth.triggerAttackRelease("C5", "32n");
+      }
+
+      async playCorrect() {
+        if (!(await this.ensureReady())) return;
+        const now = Tone.now();
+        this.synth.triggerAttackRelease("C5", "16n", now);
+        this.synth.triggerAttackRelease("E5", "16n", now + 0.09);
+        this.synth.triggerAttackRelease("G5", "8n", now + 0.18);
+      }
+
+      async playWrong() {
+        if (!(await this.ensureReady())) return;
+        const now = Tone.now();
+        this.synth.triggerAttackRelease("E3", "8n", now);
+        this.synth.triggerAttackRelease("C3", "4n", now + 0.15);
+      }
+
+      async playTick(urgent = false) {
+        if (!(await this.ensureReady())) return;
+        this.synth.triggerAttackRelease(urgent ? "A5" : "G4", "64n");
+      }
+
+      async playFanfare() {
+        if (!(await this.ensureReady())) return;
+        const now = Tone.now();
+        this.synth.triggerAttackRelease("C5", "16n", now);
+        this.synth.triggerAttackRelease("E5", "16n", now + 0.1);
+        this.synth.triggerAttackRelease("G5", "16n", now + 0.2);
+        this.synth.triggerAttackRelease("C6", "4n", now + 0.3);
+      }
+    }
+
+    const sfx = new SoundEffects();
+
+    // =========================================================
+    // 3. INICIALIZAÇÃO DO FIREBASE E ESTADO GLOBAL
+    // =========================================================
+    const appId = typeof __app_id !== "undefined" ? __app_id : "finquiz-app-default";
+    const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : null;
+
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let isFirebaseReady = false;
+
+    // Estado local do jogo
+    const state = {
+      nickname: "",
+      questions: [],
+      roomCode: null,
+      isHost: false,
+      roomData: null,
+      players: [], // Lista sincronizada da subcoleção players
+      unsubRoom: null,
+      unsubPlayers: null,
+      timerInterval: null,
+      botTimeouts: [],
+      lastPlayedPhaseKey: "",
+      selectedOptionThisRound: null
+    };
+
+    // Paleta de avatares para jogadores
+    const AVATAR_STYLES = [
+      { bg: "from-emerald-400 to-teal-600", icon: "fa-sack-dollar" },
+      { bg: "from-amber-400 to-orange-500", icon: "fa-coins" },
+      { bg: "from-sky-400 to-blue-600", icon: "fa-chart-line" },
+      { bg: "from-purple-400 to-indigo-600", icon: "fa-gem" },
+      { bg: "from-rose-400 to-pink-600", icon: "fa-piggy-bank" },
+      { bg: "from-lime-400 to-green-600", icon: "fa-wallet" },
+      { bg: "from-cyan-400 to-sky-600", icon: "fa-landmark" },
+      { bg: "from-fuchsia-400 to-purple-600", icon: "fa-rocket" }
+    ];
+
+    // =========================================================
+    // 4. UTILITÁRIOS DE UI (TOASTS, MODAIS, NAVEGAÇÃO)
+    // =========================================================
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+
+      const colors = {
+        info: "bg-slate-900 border-sky-400/50 text-sky-100",
+        success: "bg-slate-900 border-emerald-400/60 text-emerald-200",
+        warning: "bg-slate-900 border-amber-400/60 text-amber-200",
+        error: "bg-slate-900 border-rose-500/60 text-rose-200"
+      };
+
+      const icons = {
+        info: "fa-circle-info text-sky-400",
+        success: "fa-circle-check text-emerald-400",
+        warning: "fa-triangle-exclamation text-amber-400",
+        error: "fa-circle-xmark text-rose-400"
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-md text-sm font-medium animate-pop ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info} text-base shrink-0"></i>
+        <span class="flex-1">${escapeHtml(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-8px)";
+        toast.style.transition = "all 0.25s ease";
+        setTimeout(() => toast.remove(), 250);
+      }, 3400);
+    }
+
+    function showConfirmModal(title, message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById("confirmModal");
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMessage").textContent = message;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+
+        const cleanup = (result) => {
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+          document.getElementById("confirmOkBtn").onclick = null;
+          document.getElementById("confirmCancelBtn").onclick = null;
+          resolve(result);
+        };
+
+        document.getElementById("confirmOkBtn").onclick = () => cleanup(true);
+        document.getElementById("confirmCancelBtn").onclick = () => cleanup(false);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (typeof str !== "string") return "";
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function switchView(viewId) {
+      const views = ["viewHome", "viewEditor", "viewLobby", "viewQuestion", "viewRoundResult", "viewPodium"];
+      views.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (id === viewId) {
+            el.classList.remove("hidden");
+          } else {
+            el.classList.add("hidden");
+          }
+        }
+      });
+    }
+
+    // =========================================================
+    // 5. GERENCIAMENTO DE PERGUNTAS (EM MEMÓRIA + FIRESTORE PRIVADO)
+    // =========================================================
+    function loadInitialQuestions() {
+      // Clona as questões padrão de Educação Financeira
+      state.questions = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+      updateQuestionCountBadges();
+    }
+
+    async function loadUserSavedQuestionsFromCloud() {
+      if (!isFirebaseReady || !currentUser) return;
+      try {
+        const bankDocRef = doc(db, "artifacts", appId, "users", currentUser.uid, "quizBank", "customQuestions");
+        const snap = await getDoc(bankDocRef);
+        if (snap.exists() && Array.isArray(snap.data().questions) && snap.data().questions.length > 0) {
+          state.questions = snap.data().questions;
+          updateQuestionCountBadges();
+        }
+      } catch (err) {
+        console.warn("Usando banco de questões padrão:", err);
+      }
+    }
+
+    async function persistQuestions() {
+      updateQuestionCountBadges();
+
+      // Se o usuário estiver logado no Firebase, salva no perfil privado dele
+      if (isFirebaseReady && currentUser) {
+        try {
+          const bankDocRef = doc(db, "artifacts", appId, "users", currentUser.uid, "quizBank", "customQuestions");
+          await setDoc(bankDocRef, {
+            questions: state.questions,
+            updatedAt: Date.now()
+          });
+        } catch (err) {
+          console.error("Erro ao salvar pacote de perguntas:", err);
+        }
+      }
+
+      // Se o host já estiver em uma sala no lobby, atualiza as perguntas da sala também!
+      if (state.roomCode && state.isHost && state.roomData && state.roomData.status === "lobby") {
+        try {
+          const roomRef = getRoomDocRef(state.roomCode);
+          await updateDoc(roomRef, {
+            questions: state.questions
+          });
+          showToast("Perguntas da sala atualizadas com sucesso!", "success");
+        } catch (err) {
+          console.error("Erro ao sincronizar perguntas com a sala:", err);
+        }
+      }
+    }
+
+    function updateQuestionCountBadges() {
+      const count = state.questions.length;
+      const homeBadge = document.getElementById("questionCountBadge");
+      const lobbyBadge = document.getElementById("lobbyQuestionCount");
+      if (homeBadge) homeBadge.textContent = `${count} ${count === 1 ? "questão ativa" : "questões ativas"}`;
+      if (lobbyBadge) lobbyBadge.textContent = count;
+    }
+
+    function renderQuestionsEditorList() {
+      const container = document.getElementById("questionsListContainer");
+      container.innerHTML = "";
+
+      if (state.questions.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 bg-slate-950/50 rounded-2xl border border-dashed border-white/15">
+            <p class="text-slate-400 mb-3">Nenhuma pergunta cadastrada.</p>
+            <button id="btnEmptyAdd" class="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-sm">
+              + Adicionar Primeira Pergunta
+            </button>
+          </div>
+        `;
+        document.getElementById("btnEmptyAdd")?.addEventListener("click", () => openQuestionForm());
+        return;
+      }
+
+      const shapes = ["▲", "◆", "●", "■"];
+      const badgeColors = [
+        "bg-rose-500/20 text-rose-300 border-rose-500/30",
+        "bg-sky-500/20 text-sky-300 border-sky-500/30",
+        "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+      ];
+
+      state.questions.forEach((q, idx) => {
+        const card = document.createElement("div");
+        card.className = "bg-slate-950/75 border border-white/10 hover:border-white/20 rounded-2xl p-4 sm:p-5 transition";
+
+        const optionsHtml = q.options
+          .map((opt, optIdx) => {
+            const isCorrect = optIdx === q.correctIndex;
+            return `
+              <div class="flex items-center gap-2 text-xs sm:text-sm px-3 py-2 rounded-xl border ${
+                isCorrect
+                  ? "bg-emerald-500/15 border-emerald-400/50 text-emerald-200 font-bold"
+                  : "bg-slate-900/70 border-white/5 text-slate-400"
+              }">
+                <span class="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold border ${badgeColors[optIdx]}">
+                  ${shapes[optIdx]}
+                </span>
+                <span class="truncate flex-1">${escapeHtml(opt)}</span>
+                ${isCorrect ? '<i class="fa-solid fa-check text-emerald-400 shrink-0"></i>' : ""}
+              </div>
+            `;
+          })
+          .join("");
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div class="flex items-start gap-3">
+              <span class="px-2.5 py-1 rounded-lg bg-white/10 text-white font-mono font-bold text-xs mt-0.5">
+                #${idx + 1}
+              </span>
+              <div>
+                <h4 class="font-bold text-white text-sm sm:text-base leading-snug">${escapeHtml(q.prompt)}</h4>
+                <span class="inline-flex items-center gap-1 text-xs text-slate-400 mt-1">
+                  <i class="fa-regular fa-clock text-amber-400"></i> ${q.timeLimit}s
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button data-edit-id="${q.id}" class="btn-edit-q p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 transition" title="Editar">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button data-del-id="${q.id}" class="btn-del-q p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 transition" title="Excluir">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${optionsHtml}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      // Eventos de editar e excluir
+      container.querySelectorAll(".btn-edit-q").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-edit-id");
+          const question = state.questions.find((item) => item.id === id);
+          if (question) openQuestionForm(question);
+        });
+      });
+
+      container.querySelectorAll(".btn-del-q").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (state.questions.length <= 1) {
+            showToast("O quiz precisa ter pelo menos 1 pergunta.", "warning");
+            return;
+          }
+          const id = btn.getAttribute("data-del-id");
+          const ok = await showConfirmModal("Excluir Pergunta", "Deseja realmente remover esta pergunta do pacote?");
+          if (!ok) return;
+          state.questions = state.questions.filter((item) => item.id !== id);
+          await persistQuestions();
+          renderQuestionsEditorList();
+          showToast("Pergunta removida.", "info");
+        });
+      });
+    }
+
+    function openQuestionForm(question = null) {
+      const formCard = document.getElementById("questionFormCard");
+      const titleEl = document.getElementById("formCardTitle");
+      const idInput = document.getElementById("editQuestionId");
+      const promptInput = document.getElementById("qPromptInput");
+      const timeInput = document.getElementById("qTimeInput");
+      const expInput = document.getElementById("qExplanationInput");
+
+      if (question) {
+        titleEl.textContent = "Editar Pergunta";
+        idInput.value = question.id;
+        promptInput.value = question.prompt;
+        timeInput.value = String(question.timeLimit || 15);
+        expInput.value = question.explanation || "";
+        question.options.forEach((opt, i) => {
+          document.getElementById(`qOpt${i}`).value = opt;
+        });
+        const radio = document.querySelector(`input[name="correctOption"][value="${question.correctIndex}"]`);
+        if (radio) radio.checked = true;
+      } else {
+        titleEl.textContent = "Adicionar Nova Pergunta";
+        idInput.value = "";
+        promptInput.value = "";
+        timeInput.value = "25";
+        expInput.value = "";
+        for (let i = 0; i < 4; i++) {
+          document.getElementById(`qOpt${i}`).value = "";
+        }
+        const radio = document.querySelector(`input[name="correctOption"][value="0"]`);
+        if (radio) radio.checked = true;
+      }
+
+      formCard.classList.remove("hidden");
+      promptInput.focus();
+    }
+
+    function closeQuestionForm() {
+      document.getElementById("questionFormCard").classList.add("hidden");
+    }
+
+    async function handleSaveQuestionForm() {
+      const id = document.getElementById("editQuestionId").value;
+      const prompt = document.getElementById("qPromptInput").value.trim();
+      const timeLimit = parseInt(document.getElementById("qTimeInput").value, 10) || 25;
+      const explanation = document.getElementById("qExplanationInput").value.trim();
+      const options = [
+        document.getElementById("qOpt0").value.trim(),
+        document.getElementById("qOpt1").value.trim(),
+        document.getElementById("qOpt2").value.trim(),
+        document.getElementById("qOpt3").value.trim()
+      ];
+      const correctRadio = document.querySelector('input[name="correctOption"]:checked');
+      const correctIndex = correctRadio ? parseInt(correctRadio.value, 10) : 0;
+
+      if (!prompt) {
+        showToast("Digite o enunciado da pergunta.", "warning");
+        return;
+      }
+      if (options.some((o) => !o)) {
+        showToast("Preencha todas as 4 alternativas.", "warning");
+        return;
+      }
+
+      if (id) {
+        const idx = state.questions.findIndex((q) => q.id === id);
+        if (idx !== -1) {
+          state.questions[idx] = { id, prompt, options, correctIndex, timeLimit, explanation };
+        }
+      } else {
+        state.questions.push({
+          id: "custom-" + Date.now(),
+          prompt,
+          options,
+          correctIndex,
+          timeLimit,
+          explanation
+        });
+      }
+
+      await persistQuestions();
+      closeQuestionForm();
+      renderQuestionsEditorList();
+      showToast("Pergunta salva com sucesso!", "success");
+    }
+
+    // =========================================================
+    // 6. FIRESTORE HELPERS (SEGUINDO ESTRITAMENTE AS REGRAS)
+    // =========================================================
+    // Regra 1: Caminhos estritos dentro de /artifacts/{appId}/public/data/...
+    function getRoomDocRef(code) {
+      return doc(db, "artifacts", appId, "public", "data", "finquiz_rooms", code);
+    }
+
+    function getPlayersCollectionRef(code) {
+      return collection(db, "artifacts", appId, "public", "data", `finquiz_players_${code}`);
+    }
+
+    function getPlayerDocRef(code, playerId) {
+      return doc(db, "artifacts", appId, "public", "data", `finquiz_players_${code}`, playerId);
+    }
+
+    function generateRoomCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "";
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    // =========================================================
+    // 7. CRIAÇÃO E ENTRADA EM SALAS MULTIPLAYER
+    // =========================================================
+    function validateNickname() {
+      const input = document.getElementById("inputNickname");
+      const nick = input.value.trim();
+      if (!nick) {
+        showToast("Por favor, digite seu apelido antes de continuar.", "warning");
+        input.focus();
+        return null;
+      }
+      state.nickname = nick;
+      return nick;
+    }
+
+    async function createRoom() {
+      if (!isFirebaseReady || !currentUser) {
+        showToast("Aguarde a conexão com o servidor...", "warning");
+        return;
+      }
+      const nick = validateNickname();
+      if (!nick) return;
+
+      if (state.questions.length === 0) {
+        showToast("Adicione pelo menos 1 pergunta antes de criar a sala.", "warning");
+        return;
+      }
+
+      sfx.playClick();
+      const btn = document.getElementById("btnCreateRoom");
+      btn.disabled = true;
+
+      try {
+        const code = generateRoomCode();
+        const roomRef = getRoomDocRef(code);
+
+        const initialRoom = {
+          code,
+          hostId: currentUser.uid,
+          status: "lobby", // 'lobby' | 'question' | 'round_result' | 'finished'
+          currentQuestionIndex: 0,
+          questionStartTime: 0,
+          questions: state.questions,
+          createdAt: Date.now()
+        };
+
+        await setDoc(roomRef, initialRoom);
+
+        // Registra o próprio Host na lista de jogadores para que ele também possa jogar e pontuar!
+        const avatarIdx = Math.floor(Math.random() * AVATAR_STYLES.length);
+        await setDoc(getPlayerDocRef(code, currentUser.uid), {
+          id: currentUser.uid,
+          name: nick,
+          score: 0,
+          lastPoints: 0,
+          answeredIndex: null,
+          lastAnswerCorrect: false,
+          isBot: false,
+          avatarIdx,
+          joinedAt: Date.now()
+        });
+
+        state.roomCode = code;
+        state.isHost = true;
+        subscribeToRoom(code);
+        showToast(`Sala ${code} criada com sucesso!`, "success");
+      } catch (err) {
+        console.error("Erro ao criar sala:", err);
+        showToast("Não foi possível criar a sala. Tente novamente.", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function joinRoom() {
+      if (!isFirebaseReady || !currentUser) {
+        showToast("Aguarde a conexão com o servidor...", "warning");
+        return;
+      }
+      const nick = validateNickname();
+      if (!nick) return;
+
+      const codeInput = document.getElementById("inputRoomCode");
+      const code = codeInput.value.trim().toUpperCase();
+      if (code.length < 4) {
+        showToast("Digite um código de sala válido.", "warning");
+        codeInput.focus();
+        return;
+      }
+
+      sfx.playClick();
+      const btn = document.getElementById("btnJoinRoom");
+      btn.disabled = true;
+
+      try {
+        const roomRef = getRoomDocRef(code);
+        const snap = await getDoc(roomRef);
+
+        if (!snap.exists()) {
+          showToast("Sala não encontrada. Verifique o código digitado.", "error");
+          btn.disabled = false;
+          return;
+        }
+
+        const data = snap.data();
+        if (data.status === "finished") {
+          showToast("Esta partida já foi encerrada.", "warning");
+          btn.disabled = false;
+          return;
+        }
+
+        const avatarIdx = Math.floor(Math.random() * AVATAR_STYLES.length);
+        const playerRef = getPlayerDocRef(code, currentUser.uid);
+        const existingPlayer = await getDoc(playerRef);
+
+        if (!existingPlayer.exists()) {
+          await setDoc(playerRef, {
+            id: currentUser.uid,
+            name: nick,
+            score: 0,
+            lastPoints: 0,
+            answeredIndex: null,
+            lastAnswerCorrect: false,
+            isBot: false,
+            avatarIdx,
+            joinedAt: Date.now()
+          });
+        } else {
+          await updateDoc(playerRef, { name: nick });
+        }
+
+        state.roomCode = code;
+        state.isHost = data.hostId === currentUser.uid;
+        subscribeToRoom(code);
+        showToast(`Você entrou na sala ${code}!`, "success");
+      } catch (err) {
+        console.error("Erro ao entrar na sala:", err);
+        showToast("Erro ao conectar na sala.", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // =========================================================
+    // 8. SINCRONIZAÇÃO EM TEMPO REAL (ONSNAPSHOT)
+    // =========================================================
+    function cleanupRoomSubscriptions() {
+      if (state.unsubRoom) {
+        state.unsubRoom();
+        state.unsubRoom = null;
+      }
+      if (state.unsubPlayers) {
+        state.unsubPlayers();
+        state.unsubPlayers = null;
+      }
+      clearInterval(state.timerInterval);
+      state.botTimeouts.forEach((t) => clearTimeout(t));
+      state.botTimeouts = [];
+    }
+
+    function subscribeToRoom(code) {
+      cleanupRoomSubscriptions();
+
+      // Listener do documento da sala
+      state.unsubRoom = onSnapshot(
+        getRoomDocRef(code),
+        (snapshot) => {
+          if (!snapshot.exists()) {
+            showToast("A sala foi encerrada pelo administrador.", "warning");
+            leaveRoomCleanup();
+            switchView("viewHome");
+            return;
+          }
+          state.roomData = snapshot.data();
+          state.isHost = state.roomData.hostId === currentUser?.uid;
+          renderGameState();
+        },
+        (error) => {
+          console.error("Erro no listener da sala:", error);
+        }
+      );
+
+      // Listener da coleção de jogadores (Regra 2: sem orderBy, ordenação feita em JS)
+      state.unsubPlayers = onSnapshot(
+        getPlayersCollectionRef(code),
+        (snapshot) => {
+          const list = [];
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data());
+          });
+          // Ordena por pontuação decrescente e, em caso de empate, por ordem de chegada
+          list.sort((a, b) => (b.score || 0) - (a.score || 0) || (a.joinedAt || 0) - (b.joinedAt || 0));
+          state.players = list;
+          renderPlayersDynamicUpdates();
+        },
+        (error) => {
+          console.error("Erro no listener de jogadores:", error);
+        }
+      );
+    }
+
+    async function leaveRoom() {
+      const ok = await showConfirmModal("Sair da Sala", "Deseja realmente sair desta sala?");
+      if (!ok) return;
+
+      if (state.roomCode && currentUser) {
+        try {
+          if (state.isHost) {
+            await deleteDoc(getRoomDocRef(state.roomCode));
+          } else {
+            await deleteDoc(getPlayerDocRef(state.roomCode, currentUser.uid));
+          }
+        } catch (e) {
+          console.warn("Aviso ao sair da sala:", e);
+        }
+      }
+      leaveRoomCleanup();
+      switchView("viewHome");
+    }
+
+    function leaveRoomCleanup() {
+      cleanupRoomSubscriptions();
+      state.roomCode = null;
+      state.isHost = false;
+      state.roomData = null;
+      state.players = [];
+      state.lastPlayedPhaseKey = "";
+    }
+
+    // =========================================================
+    // 9. RENDERIZAÇÃO E FLUXO DAS FASES DO JOGO
+    // =========================================================
+    function renderGameState() {
+      const room = state.roomData;
+      if (!room) return;
+
+      const phaseKey = `${room.status}_${room.currentQuestionIndex}`;
+      const isNewPhase = state.lastPlayedPhaseKey !== phaseKey;
+
+      if (room.status === "lobby") {
+        switchView("viewLobby");
+        renderLobbyView(room);
+      } else if (room.status === "question") {
+        switchView("viewQuestion");
+        if (isNewPhase) {
+          state.lastPlayedPhaseKey = phaseKey;
+          state.selectedOptionThisRound = null;
+          setupQuestionView(room);
+        }
+      } else if (room.status === "round_result") {
+        switchView("viewRoundResult");
+        if (isNewPhase) {
+          state.lastPlayedPhaseKey = phaseKey;
+          clearInterval(state.timerInterval);
+          setupRoundResultView(room);
+        }
+      } else if (room.status === "finished") {
+        switchView("viewPodium");
+        if (isNewPhase) {
+          state.lastPlayedPhaseKey = phaseKey;
+          clearInterval(state.timerInterval);
+          sfx.playFanfare();
+          setupPodiumView();
+        }
+      }
+    }
+
+    function renderPlayersDynamicUpdates() {
+      const room = state.roomData;
+      if (!room) return;
+
+      if (room.status === "lobby") {
+        renderLobbyPlayersList();
+      } else if (room.status === "question") {
+        updateQuestionAnsweredCounter();
+        checkIfAllPlayersAnswered();
+      } else if (room.status === "round_result") {
+        renderPartialLeaderboard();
+      } else if (room.status === "finished") {
+        setupPodiumView();
+      }
+    }
+
+    // --- FASE: LOBBY ---
+    function renderLobbyView(room) {
+      document.getElementById("lobbyRoomCodeDisplay").textContent = room.code;
+      document.getElementById("lobbyQuestionCount").textContent = (room.questions || []).length;
+
+      const roleBadge = document.getElementById("lobbyRoleBadge");
+      const hostControls = document.getElementById("hostLobbyControls");
+      const guestBanner = document.getElementById("guestLobbyBanner");
+
+      if (state.isHost) {
+        roleBadge.innerHTML = `<i class="fa-solid fa-crown"></i> Você é o Administrador da Sala`;
+        roleBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 mb-2";
+        hostControls.classList.remove("hidden");
+        guestBanner.classList.add("hidden");
+      } else {
+        roleBadge.innerHTML = `<i class="fa-solid fa-user"></i> Participante`;
+        roleBadge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-400/30 mb-2";
+        hostControls.classList.add("hidden");
+        guestBanner.classList.remove("hidden");
+      }
+
+      renderLobbyPlayersList();
+    }
+
+    function renderLobbyPlayersList() {
+      const grid = document.getElementById("lobbyPlayersGrid");
+      const countEl = document.getElementById("lobbyPlayersCount");
+      countEl.textContent = state.players.length;
+
+      grid.innerHTML = state.players
+        .map((p) => {
+          const style = AVATAR_STYLES[(p.avatarIdx || 0) % AVATAR_STYLES.length];
+          const isMe = p.id === currentUser?.uid;
+          const isRoomHost = p.id === state.roomData?.hostId;
+
+          return `
+            <div class="bg-slate-950/80 border ${isMe ? "border-emerald-400/60" : "border-white/10"} rounded-2xl p-3.5 flex items-center gap-3 animate-pop">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${style.bg} flex items-center justify-center text-slate-950 font-bold shrink-0 shadow">
+                <i class="fa-solid ${p.isBot ? "fa-robot" : style.icon}"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <p class="font-bold text-white text-sm truncate">${escapeHtml(p.name)}</p>
+                  ${isRoomHost ? '<i class="fa-solid fa-crown text-amber-400 text-xs" title="Administrador"></i>' : ""}
+                </div>
+                <span class="text-[11px] text-slate-400 block">
+                  ${isMe ? "Você" : p.isBot ? "Bot Simulado" : "Pronto"}
+                </span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    async function addSimulatedBot() {
+      if (!state.isHost || !state.roomCode) return;
+      const botNames = ["Warren B.", "Nath Finanças", "Luiza T.", "Primo Rico", "CriptoNinja", "PoupadorPro", "SelicMaster"];
+      const usedNames = new Set(state.players.map((p) => p.name));
+      const available = botNames.filter((n) => !usedNames.has(n));
+      const chosenName = available.length > 0 ? available[0] : `Bot #${state.players.length + 1}`;
+
+      const botId = "bot_" + Date.now() + "_" + Math.floor(Math.random() * 100);
+      const avatarIdx = Math.floor(Math.random() * AVATAR_STYLES.length);
+
+      await setDoc(getPlayerDocRef(state.roomCode, botId), {
+        id: botId,
+        name: chosenName,
+        score: 0,
+        lastPoints: 0,
+        answeredIndex: null,
+        lastAnswerCorrect: false,
+        isBot: true,
+        avatarIdx,
+        joinedAt: Date.now()
+      });
+      sfx.playClick();
+      showToast(`${chosenName} entrou na sala!`, "info");
+    }
+
+    // --- FASE: INICIAR / AVANÇAR PERGUNTA ---
+    async function startOrNextQuestion(questionIndex) {
+      if (!state.isHost || !state.roomCode || !state.roomData) return;
+
+      const questions = state.roomData.questions || state.questions;
+      if (questionIndex >= questions.length) {
+        // Encerra o jogo e vai para o pódio
+        await updateDoc(getRoomDocRef(state.roomCode), {
+          status: "finished"
+        });
+        return;
+      }
+
+      // Reseta estado de resposta da rodada para todos os jogadores
+      const resetPromises = state.players.map((p) =>
+        updateDoc(getPlayerDocRef(state.roomCode, p.id), {
+          answeredIndex: null,
+          lastPoints: 0,
+          lastAnswerCorrect: false
+        })
+      );
+      await Promise.all(resetPromises);
+
+      // Atualiza a sala para exibir a questão simultaneamente para todos
+      await updateDoc(getRoomDocRef(state.roomCode), {
+        status: "question",
+        currentQuestionIndex: questionIndex,
+        questionStartTime: Date.now()
+      });
+    }
+
+    function setupQuestionView(room) {
+      const questions = room.questions || [];
+      const qIdx = room.currentQuestionIndex || 0;
+      const question = questions[qIdx];
+      if (!question) return;
+
+      const me = state.players.find((p) => p.id === currentUser?.uid);
+      document.getElementById("gameQuestionProgress").textContent = `Questão ${qIdx + 1} de ${questions.length}`;
+      document.getElementById("gameMyScoreBadge").innerHTML = `<i class="fa-solid fa-star mr-1"></i> ${me ? me.score : 0} pts`;
+      document.getElementById("questionPromptText").textContent = question.prompt;
+
+      // Preenche os botões das alternativas
+      const optionBtns = document.querySelectorAll("#optionsGrid .option-btn");
+      optionBtns.forEach((btn, idx) => {
+        btn.disabled = false;
+        btn.classList.remove("opacity-40", "ring-4", "ring-white", "scale-[1.02]");
+        const textSpan = btn.querySelector(".option-text");
+        if (textSpan) textSpan.textContent = question.options[idx] || "";
+      });
+
+      document.getElementById("answeredWaitingBox").classList.add("hidden");
+      updateQuestionAnsweredCounter();
+
+      // Se for o Host e houver Bots na sala, agenda respostas automáticas para os Bots
+      if (state.isHost) {
+        scheduleBotAnswers(room, question);
+      }
+
+      // Inicia o cronômetro sincronizado
+      startQuestionTimer(room, question);
+    }
+
+    function scheduleBotAnswers(room, question) {
+      state.botTimeouts.forEach((t) => clearTimeout(t));
+      state.botTimeouts = [];
+
+      const bots = state.players.filter((p) => p.isBot);
+      const timeLimitMs = (question.timeLimit || 15) * 1000;
+
+      bots.forEach((bot) => {
+        // Bot responde entre 1.8s e 75% do tempo limite
+        const delay = 1800 + Math.random() * (timeLimitMs * 0.65);
+        const timeoutId = setTimeout(async () => {
+          if (!state.roomData || state.roomData.status !== "question") return;
+          if (state.roomData.currentQuestionIndex !== room.currentQuestionIndex) return;
+
+          // 70% de chance do bot acertar
+          const isSmart = Math.random() < 0.7;
+          const chosenIndex = isSmart
+            ? question.correctIndex
+            : (question.correctIndex + 1 + Math.floor(Math.random() * 3)) % 4;
+
+          await submitAnswerForPlayer(bot.id, chosenIndex, question, room.questionStartTime);
+        }, delay);
+
+        state.botTimeouts.push(timeoutId);
+      });
+    }
+
+    function startQuestionTimer(room, question) {
+      clearInterval(state.timerInterval);
+      const totalSeconds = question.timeLimit || 15;
+      const startTime = room.questionStartTime || Date.now();
+      const timerCircle = document.getElementById("timerCircle");
+      const progressBar = document.getElementById("timerProgressBar");
+
+      let lastWholeSecond = totalSeconds;
+
+      state.timerInterval = setInterval(async () => {
+        const elapsedSec = (Date.now() - startTime) / 1000;
+        const remainingSec = Math.max(0, totalSeconds - elapsedSec);
+        const wholeSec = Math.ceil(remainingSec);
+
+        timerCircle.textContent = wholeSec;
+        const pct = Math.max(0, Math.min(100, (remainingSec / totalSeconds) * 100));
+        progressBar.style.width = `${pct}%`;
+
+        // Cores de alerta nos últimos 5 segundos
+        if (wholeSec <= 5) {
+          timerCircle.className = "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-rose-500/25 border-2 border-rose-400 flex items-center justify-center font-display font-extrabold text-xl sm:text-2xl text-rose-300 shadow-lg animate-pulse";
+          if (wholeSec < lastWholeSecond && wholeSec > 0) {
+            sfx.playTick(true);
+          }
+        } else {
+          timerCircle.className = "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center font-display font-extrabold text-xl sm:text-2xl text-emerald-300 shadow-lg";
+        }
+        lastWholeSecond = wholeSec;
+
+        // Tempo esgotado!
+        if (remainingSec <= 0) {
+          clearInterval(state.timerInterval);
+          disableAllOptionButtons();
+
+          // O Host encerra a rodada automaticamente quando o tempo acaba
+          if (state.isHost && state.roomData?.status === "question") {
+            await finishCurrentRound();
+          }
+        }
+      }, 150);
+    }
+
+    function disableAllOptionButtons() {
+      document.querySelectorAll("#optionsGrid .option-btn").forEach((btn) => {
+        btn.disabled = true;
+      });
+    }
+
+    async function handlePlayerSelectOption(optionIndex) {
+      if (state.selectedOptionThisRound !== null) return;
+      if (!state.roomData || state.roomData.status !== "question") return;
+      if (!currentUser) return;
+
+      const questions = state.roomData.questions || [];
+      const question = questions[state.roomData.currentQuestionIndex];
+      if (!question) return;
+
+      state.selectedOptionThisRound = optionIndex;
+      sfx.playClick();
+
+      // Destaque visual da opção escolhida
+      const optionBtns = document.querySelectorAll("#optionsGrid .option-btn");
+      optionBtns.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === optionIndex) {
+          btn.classList.add("ring-4", "ring-white", "scale-[1.02]");
+        } else {
+          btn.classList.add("opacity-40");
+        }
+      });
+
+      document.getElementById("answeredWaitingBox").classList.remove("hidden");
+
+      await submitAnswerForPlayer(currentUser.uid, optionIndex, question, state.roomData.questionStartTime);
+    }
+
+    // Cálculo de Pontuação por Velocidade (Base 500 + Bônus até 500 = Máx 1000)
+    async function submitAnswerForPlayer(playerId, chosenIndex, question, questionStartTime) {
+      if (!state.roomCode) return;
+
+      const player = state.players.find((p) => p.id === playerId);
+      if (!player || player.answeredIndex !== null) return;
+
+      const isCorrect = chosenIndex === question.correctIndex;
+      let earnedPoints = 0;
+
+      if (isCorrect) {
+        const totalMs = (question.timeLimit || 15) * 1000;
+        const elapsedMs = Math.max(0, Date.now() - (questionStartTime || Date.now()));
+        const remainingRatio = Math.max(0, Math.min(1, 1 - elapsedMs / totalMs));
+
+        const basePoints = 500;
+        const speedBonus = Math.round(500 * remainingRatio);
+        earnedPoints = basePoints + speedBonus;
+      }
+
+      const newTotalScore = (player.score || 0) + earnedPoints;
+
+      try {
+        await updateDoc(getPlayerDocRef(state.roomCode, playerId), {
+          answeredIndex: chosenIndex,
+          lastPoints: earnedPoints,
+          lastAnswerCorrect: isCorrect,
+          score: newTotalScore
+        });
+      } catch (err) {
+        console.error("Erro ao registrar resposta:", err);
+      }
+    }
+
+    function updateQuestionAnsweredCounter() {
+      const total = state.players.length;
+      const answered = state.players.filter((p) => p.answeredIndex !== null && p.answeredIndex !== undefined).length;
+      const el = document.getElementById("answeredCounterText");
+      if (el) {
+        el.textContent = `${answered} de ${total} ${total === 1 ? "jogador respondeu" : "jogadores responderam"}`;
+      }
+    }
+
+    async function checkIfAllPlayersAnswered() {
+      if (!state.isHost || !state.roomData || state.roomData.status !== "question") return;
+      if (state.players.length === 0) return;
+
+      const allAnswered = state.players.every((p) => p.answeredIndex !== null && p.answeredIndex !== undefined);
+      if (allAnswered) {
+        clearInterval(state.timerInterval);
+        // Pequeno delay de 600ms para suavizar a transição
+        setTimeout(() => {
+          if (state.isHost && state.roomData?.status === "question") {
+            finishCurrentRound();
+          }
+        }, 600);
+      }
+    }
+
+    async function finishCurrentRound() {
+      if (!state.isHost || !state.roomCode) return;
+      try {
+        await updateDoc(getRoomDocRef(state.roomCode), {
+          status: "round_result"
+        });
+      } catch (err) {
+        console.error("Erro ao finalizar rodada:", err);
+      }
+    }
+
+    // --- FASE: RESULTADO DA RODADA ---
+    function setupRoundResultView(room) {
+      const questions = room.questions || [];
+      const qIdx = room.currentQuestionIndex || 0;
+      const question = questions[qIdx];
+      if (!question) return;
+
+      const me = state.players.find((p) => p.id === currentUser?.uid);
+      const banner = document.getElementById("myRoundResultBanner");
+      const iconEl = document.getElementById("myRoundResultIcon");
+      const titleEl = document.getElementById("myRoundResultTitle");
+      const pointsEl = document.getElementById("myRoundResultPoints");
+
+      if (me && me.lastAnswerCorrect) {
+        sfx.playCorrect();
+        banner.className = "rounded-2xl p-5 mb-6 text-center border bg-emerald-500/20 border-emerald-400/50 text-emerald-100";
+        iconEl.textContent = "🚀";
+        titleEl.textContent = "Resposta Correta!";
+        const bonus = Math.max(0, (me.lastPoints || 500) - 500);
+        pointsEl.textContent = `+${me.lastPoints} pontos (500 base + ${bonus} bônus de velocidade)`;
+      } else {
+        sfx.playWrong();
+        banner.className = "rounded-2xl p-5 mb-6 text-center border bg-rose-500/20 border-rose-400/50 text-rose-100";
+        iconEl.textContent = me && me.answeredIndex !== null ? "📉" : "⏰";
+        titleEl.textContent = me && me.answeredIndex !== null ? "Ops! Resposta incorreta" : "Tempo esgotado!";
+        pointsEl.textContent = "+0 pontos nesta rodada";
+      }
+
+      document.getElementById("roundCorrectAnswerText").textContent = question.options[question.correctIndex];
+      document.getElementById("roundExplanationText").textContent =
+        question.explanation || "Continue atento às próximas questões para acumular mais pontos!";
+
+      renderPartialLeaderboard();
+
+      const hostControls = document.getElementById("hostNextRoundControls");
+      const guestBanner = document.getElementById("guestNextRoundBanner");
+      const nextLabel = document.getElementById("btnNextQuestionLabel");
+
+      if (state.isHost) {
+        hostControls.classList.remove("hidden");
+        guestBanner.classList.add("hidden");
+        const isLast = qIdx + 1 >= questions.length;
+        nextLabel.textContent = isLast ? "Ver Pódio Final" : "Próxima Pergunta";
+      } else {
+        hostControls.classList.add("hidden");
+        guestBanner.classList.remove("hidden");
+      }
+    }
+
+    function renderPartialLeaderboard() {
+      const container = document.getElementById("partialLeaderboardList");
+      container.innerHTML = state.players
+        .map((p, idx) => {
+          const isMe = p.id === currentUser?.uid;
+          const style = AVATAR_STYLES[(p.avatarIdx || 0) % AVATAR_STYLES.length];
+          return `
+            <div class="flex items-center justify-between px-4 py-3 rounded-xl border ${
+              isMe ? "bg-emerald-500/15 border-emerald-400/50" : "bg-slate-950/70 border-white/10"
+            }">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center font-mono font-bold text-xs text-slate-300">
+                  #${idx + 1}
+                </span>
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br ${style.bg} flex items-center justify-center text-slate-950 text-xs shrink-0">
+                  <i class="fa-solid ${p.isBot ? "fa-robot" : style.icon}"></i>
+                </div>
+                <span class="font-bold text-white text-sm truncate">
+                  ${escapeHtml(p.name)} ${isMe ? "(Você)" : ""}
+                </span>
+              </div>
+              <div class="flex items-center gap-3 shrink-0">
+                ${
+                  p.lastPoints > 0
+                    ? `<span class="text-xs font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">+${p.lastPoints}</span>`
+                    : `<span class="text-xs font-semibold text-slate-500">+0</span>`
+                }
+                <span class="font-mono font-extrabold text-amber-300 text-sm sm:text-base">
+                  ${p.score || 0} pts
+                </span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    // --- FASE: PÓDIO FINAL ---
+    function setupPodiumView() {
+      const podiumContainer = document.getElementById("podiumVisualContainer");
+      const fullList = document.getElementById("finalLeaderboardList");
+      const sorted = [...state.players];
+
+      // Ordem visual do pódio: 2º lugar (esquerda), 1º lugar (centro), 3º lugar (direita)
+      const podiumOrder = [
+        { rank: 2, player: sorted[1], height: "h-28 sm:h-36", color: "from-slate-300 to-slate-500", badge: "🥈 2º" },
+        { rank: 1, player: sorted[0], height: "h-36 sm:h-48", color: "from-amber-300 via-amber-400 to-yellow-600", badge: "👑 1º" },
+        { rank: 3, player: sorted[2], height: "h-24 sm:h-28", color: "from-amber-600 to-orange-800", badge: "🥉 3º" }
+      ];
+
+      podiumContainer.innerHTML = podiumOrder
+        .map((slot) => {
+          if (!slot.player) return "";
+          const p = slot.player;
+          const style = AVATAR_STYLES[(p.avatarIdx || 0) % AVATAR_STYLES.length];
+          return `
+            <div class="flex flex-col items-center flex-1 max-w-[150px] animate-pop">
+              <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${style.bg} flex items-center justify-center text-slate-950 text-xl sm:text-2xl shadow-xl mb-2 border-2 border-white/30">
+                <i class="fa-solid ${p.isBot ? "fa-robot" : style.icon}"></i>
+              </div>
+              <p class="font-extrabold text-white text-xs sm:text-sm truncate w-full px-1">${escapeHtml(p.name)}</p>
+              <span class="font-mono font-bold text-amber-300 text-xs mb-2">${p.score || 0} pts</span>
+              <div class="w-full ${slot.height} rounded-t-2xl bg-gradient-to-b ${slot.color} flex items-start justify-center pt-3 shadow-2xl border-t border-white/40">
+                <span class="font-display font-extrabold text-slate-950 text-sm sm:text-lg">${slot.badge}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      fullList.innerHTML = sorted
+        .map((p, idx) => {
+          const isMe = p.id === currentUser?.uid;
+          return `
+            <div class="flex items-center justify-between px-4 py-3 rounded-xl border ${
+              isMe ? "bg-emerald-500/15 border-emerald-400/50" : "bg-slate-950/70 border-white/10"
+            }">
+              <div class="flex items-center gap-3">
+                <span class="font-mono font-extrabold text-sm ${idx === 0 ? "text-amber-300" : "text-slate-400"}">
+                  #${idx + 1}
+                </span>
+                <span class="font-bold text-white text-sm">${escapeHtml(p.name)} ${isMe ? "(Você)" : ""}</span>
+              </div>
+              <span class="font-mono font-extrabold text-amber-300">${p.score || 0} pts</span>
+            </div>
+          `;
+        })
+        .join("");
+
+      const playAgainBtn = document.getElementById("btnPlayAgainHost");
+      if (state.isHost) {
+        playAgainBtn.classList.remove("hidden");
+      } else {
+        playAgainBtn.classList.add("hidden");
+      }
+    }
+
+    async function restartGameInSameRoom() {
+      if (!state.isHost || !state.roomCode) return;
+
+      // Zera a pontuação de todos os jogadores e retorna a sala para o lobby
+      const resetPromises = state.players.map((p) =>
+        updateDoc(getPlayerDocRef(state.roomCode, p.id), {
+          score: 0,
+          lastPoints: 0,
+          answeredIndex: null,
+          lastAnswerCorrect: false
+        })
+      );
+      await Promise.all(resetPromises);
+
+      await updateDoc(getRoomDocRef(state.roomCode), {
+        status: "lobby",
+        currentQuestionIndex: 0,
+        questions: state.questions
+      });
+      showToast("Sala reiniciada! Pronto para uma nova partida.", "success");
+    }
+
+    // =========================================================
+    // 10. EVENT LISTENERS E INICIALIZAÇÃO DA APLICAÇÃO
+    // =========================================================
+    function bindUIEvents() {
+      // Alternar Som
+      document.getElementById("btnToggleSound").addEventListener("click", () => {
+        sfx.enabled = !sfx.enabled;
+        const icon = document.getElementById("soundIcon");
+        icon.className = sfx.enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-slate-500";
+        if (sfx.enabled) sfx.playClick();
+      });
+
+      // Logo volta ao início (se não estiver em sala ativa)
+      document.getElementById("btnLogoHome").addEventListener("click", () => {
+        if (!state.roomCode) {
+          switchView("viewHome");
+        }
+      });
+
+      // Tela Inicial: Criar Sala
+      document.getElementById("btnCreateRoom").addEventListener("click", createRoom);
+
+      // Tela Inicial: Entrar em Sala
+      document.getElementById("btnJoinRoom").addEventListener("click", joinRoom);
+      document.getElementById("inputRoomCode").addEventListener("keyup", (e) => {
+        if (e.key === "Enter") joinRoom();
+      });
+
+      // Abrir Editor de Perguntas (a partir do Início ou do Lobby do Host)
+      document.getElementById("btnOpenEditor").addEventListener("click", () => {
+        sfx.playClick();
+        renderQuestionsEditorList();
+        switchView("viewEditor");
+      });
+
+      document.getElementById("btnLobbyEditQuestions").addEventListener("click", () => {
+        sfx.playClick();
+        renderQuestionsEditorList();
+        switchView("viewEditor");
+      });
+
+      // Voltar do Editor
+      document.getElementById("btnBackFromEditor").addEventListener("click", () => {
+        sfx.playClick();
+        closeQuestionForm();
+        if (state.roomCode) {
+          switchView("viewLobby");
+        } else {
+          switchView("viewHome");
+        }
+      });
+
+      // Botões do Formulário de Perguntas
+      document.getElementById("btnNewQuestion").addEventListener("click", () => openQuestionForm());
+      document.getElementById("btnCloseForm").addEventListener("click", closeQuestionForm);
+      document.getElementById("btnCancelQuestionForm").addEventListener("click", closeQuestionForm);
+      document.getElementById("btnSaveQuestion").addEventListener("click", handleSaveQuestionForm);
+
+      document.getElementById("btnResetQuestions").addEventListener("click", async () => {
+        const ok = await showConfirmModal(
+          "Restaurar Perguntas Padrão",
+          "Isso substituirá suas alterações pelas 11 perguntas originais de Educação Financeira. Continuar?"
+        );
+        if (!ok) return;
+        state.questions = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+        await persistQuestions();
+        renderQuestionsEditorList();
+        showToast("Pacote padrão restaurado!", "success");
+      });
+
+      // Lobby: Copiar Código da Sala (usando document.execCommand para compatibilidade com iFrames)
+      document.getElementById("btnCopyRoomCode").addEventListener("click", () => {
+        if (!state.roomCode) return;
+        const tempInput = document.createElement("input");
+        tempInput.value = state.roomCode;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        sfx.playClick();
+        showToast(`Código ${state.roomCode} copiado!`, "success");
+      });
+
+      // Lobby: Adicionar Bot de Teste
+      document.getElementById("btnAddBot").addEventListener("click", addSimulatedBot);
+
+      // Lobby: Iniciar Jogo
+      document.getElementById("btnStartGame").addEventListener("click", () => {
+        sfx.playClick();
+        startOrNextQuestion(0);
+      });
+
+      // Lobby: Sair da Sala
+      document.getElementById("btnLeaveRoom").addEventListener("click", leaveRoom);
+
+      // Jogo: Selecionar Alternativa
+      document.querySelectorAll("#optionsGrid .option-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.getAttribute("data-index"), 10);
+          handlePlayerSelectOption(idx);
+        });
+      });
+
+      // Resultado da Rodada: Próxima Pergunta
+      document.getElementById("btnNextQuestion").addEventListener("click", () => {
+        if (!state.roomData) return;
+        sfx.playClick();
+        startOrNextQuestion((state.roomData.currentQuestionIndex || 0) + 1);
+      });
+
+      // Pódio: Jogar Novamente ou Voltar ao Início
+      document.getElementById("btnPlayAgainHost").addEventListener("click", restartGameInSameRoom);
+      document.getElementById("btnBackToHomeFinal").addEventListener("click", () => {
+        leaveRoomCleanup();
+        switchView("viewHome");
+      });
+    }
+
+    // Inicialização Assíncrona da Autenticação Firebase (Regra 3: Auth antes de qualquer query)
+    async function initApp() {
+      loadInitialQuestions();
+      bindUIEvents();
+
+      const dot = document.getElementById("connectionDot");
+      const text = document.getElementById("connectionText");
+
+      if (!firebaseConfig) {
+        dot.className = "w-2 h-2 rounded-full bg-rose-500";
+        text.textContent = "Configuração ausente";
+        return;
+      }
+
+      try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Prioriza __initial_auth_token e faz fallback para signInAnonymously
+        if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
+          const cred = await signInWithCustomToken(auth, __initial_auth_token);
+          currentUser = cred.user;
+        } else {
+          const cred = await signInAnonymously(auth);
+          currentUser = cred.user;
+        }
+
+        isFirebaseReady = true;
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        text.textContent = "Online • Pronto";
+
+        // Carrega perguntas personalizadas salvas na nuvem do usuário, se existirem
+        await loadUserSavedQuestionsFromCloud();
+      } catch (err) {
+        console.error("Erro na autenticação Firebase:", err);
+        dot.className = "w-2 h-2 rounded-full bg-rose-500";
+        text.textContent = "Erro de conexão";
+        showToast("Não foi possível conectar ao servidor multiplayer.", "error");
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>
